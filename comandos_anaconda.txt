@@ -1,0 +1,55 @@
+========================================
+   COMANDOS BÁSICOS DO ANACONDA
+========================================
+
+--- GERENCIAMENTO DE AMBIENTES ---
+
+conda create -n meu_ambiente                      Cria um novo ambiente
+conda create -n meu_ambiente python=3.11          Cria ambiente com versão específica do Python
+conda activate meu_ambiente                       Ativa um ambiente
+conda deactivate                                  Desativa o ambiente atual
+conda env list                                    Lista todos os ambientes
+conda remove -n meu_ambiente --all                Remove um ambiente
+
+
+--- GERENCIAMENTO DE PACOTES ---
+
+conda install numpy                               Instala um pacote
+conda install numpy pandas matplotlib            Instala vários pacotes de uma vez
+conda install -c conda-forge pacote               Instala de um canal específico
+conda update numpy                                Atualiza um pacote
+conda update --all                                Atualiza todos os pacotes
+conda remove numpy                                Remove um pacote
+conda list                                        Lista pacotes instalados no ambiente atual
+
+
+--- BUSCA E INFORMAÇÕES ---
+
+conda search numpy                                Busca um pacote disponível
+conda info                                        Informações sobre o Anaconda instalado
+conda --version                                   Versão do conda
+
+
+--- EXPORTAR E IMPORTAR AMBIENTES ---
+
+conda env export > ambiente.yml                   Exporta o ambiente para um arquivo
+conda env create -f ambiente.yml                  Recria um ambiente a partir do arquivo
+
+
+--- ATUALIZAR O CONDA ---
+
+conda update conda                                Atualiza o próprio conda
+conda update anaconda                             Atualiza a distribuição Anaconda
+
+
+========================================
+   FLUXO BÁSICO PARA INICIANTES
+========================================
+
+1. conda create -n projeto python=3.11   → Criar ambiente
+2. conda activate projeto                → Ativar ambiente
+3. conda install pacote                  → Instalar pacotes
+4. (trabalhar no projeto)
+5. conda deactivate                      → Sair do ambiente
+
+========================================
