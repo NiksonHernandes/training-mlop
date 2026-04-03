@@ -25,13 +25,15 @@ def reset_seeds() -> None:
 
 def read_data():
     url = 'raw.githubusercontent.com'
-    username = 'renansantosmendes'
-    repository = 'lectures-cdas-2023'
+    username = 'Nik.Hernandes14'
+    repository = 'mlops-ead'
     file_name = 'fetal_health_reduced.csv'
-    data = pd.read_csv(f'https://{url}/{username}/{repository}/master/{file_name}')
-    X = data.drop(["fetal_health"], axis=1)
+    data = pd.read_csv(f'https://dagshub.com/{username}/{repository}/raw/main/{file_name}')    
+    X = data.drop(["fetal_health"], axis=1) #Nome da coluna de target: fetal_health no data train
     y = data["fetal_health"]
     return X, y
+
+    #https://raw.githubusercontent.com/renansantosmendes/lectures-cdas-2023/master/fetal_health_reduced.csv
 
 def process_data(X, y):
     columns_names = list(X.columns)
@@ -62,59 +64,20 @@ def create_model(x):
     return model
 
 def config_mlflow():
-    os.environ['MLFLOW_TRACKING_USERNAME'] = 'renansantosmendes'
-    os.environ['MLFLOW_TRACKING_PASSWORD'] = '6d730ef4a90b1caf28fbb01e5748f0874fda6077'
-    mlflow.set_tracking_uri('https://dagshub.com/renansantosmendes/puc_lectures_mlops.mlflow')
-    mlflow.keras.autolog(disable=True)
+    os.environ['MLFLOW_TRACKING_USERNAME'] = 'Nik.Hernandes14'
+    os.environ['MLFLOW_TRACKING_PASSWORD'] = '98c50289cded2f647991488e12e8c3d0a5232ee1'
+    mlflow.set_tracking_uri('https://dagshub.com/Nik.Hernandes14/mlops-ead.mlflow')
+    mlflow.keras.autolog(log_models=True,
+                        log_input_examples=True,
+                        log_model_signatures=True)
     
 def train_model(model, X_train, y_train, is_train=True):
-    #Quando is_train=False (testes), só treina o modelo sem MLflow  
-    if not is_train:
-        model.fit(X_train, y_train,
-                  epochs=50,
-                  validation_split=0.2,
-                  verbose=0)
-        return
-
-    #Fluxo completo com MLflow apenas em treino real
-    with mlflow.start_run(run_name='experiment_mlops_ead_nik') as run:
-        run_id = run.info.run_id
-        print(f"Run ID: {run_id}")
-
-        mlflow.log_params({
-            "epochs": 50,
-            "optimizer": "adam",
-            "loss_function": "sparse_categorical_crossentropy",
-            "validation_split": 0.2,
-            "layers": "10-10-3",
-            "activation": "relu"
-        })
-
-        history = model.fit(X_train, y_train,
-                            epochs=50,
-                            validation_split=0.2,
-                            verbose=2)
-
-        for epoch in range(len(history.history['loss'])):
-            mlflow.log_metrics({
-                "loss":         history.history['loss'][epoch],
-                "val_loss":     history.history['val_loss'][epoch],
-                "accuracy":     history.history['accuracy'][epoch],
-                "val_accuracy": history.history['val_accuracy'][epoch],
-            }, step=epoch)
-
-        model.save("modelo.keras")
-        mlflow.log_artifact("modelo.keras", artifact_path="model")
-        print("Artefato salvo!")
-
-    client = MlflowClient()
-
-    version = client.create_model_version(
-        name="fetal_health_nik",
-        source=f"runs:/{run_id}/model/modelo.keras",
-        run_id=run_id
-    )
-    print(f"Versão registrada: v{version.version}")
+   with mlflow.start_run(run_name='experiment_mlops_ead') as run:
+    model.fit(X_train,
+            y_train,
+            epochs=50,
+            validation_split=0.2,
+            verbose=3)
 
 if __name__ == "__main__":
     X, y = read_data()
