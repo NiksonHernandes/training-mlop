@@ -67,17 +67,41 @@ def config_mlflow():
     os.environ['MLFLOW_TRACKING_USERNAME'] = 'Nik.Hernandes14'
     os.environ['MLFLOW_TRACKING_PASSWORD'] = '98c50289cded2f647991488e12e8c3d0a5232ee1'
     mlflow.set_tracking_uri('https://dagshub.com/Nik.Hernandes14/mlops-ead.mlflow')
-    mlflow.keras.autolog(log_models=True,
-                        log_input_examples=True,
-                        log_model_signatures=True)
-    
-def train_model(model, X_train, y_train, is_train=True):
-   with mlflow.start_run(run_name='experiment_mlops_ead') as run:
-    model.fit(X_train,
-            y_train,
-            epochs=50,
-            validation_split=0.2,
-            verbose=3)
+    mlflow.autolog(disable=True)
+
+# def train_model(model, X_train, y_train, is_train=True):
+#    with mlflow.start_run(run_name='experiment_mlops_ead_nik') as run:
+#     model.fit(X_train,
+#             y_train,
+#             epochs=50,
+#             validation_split=0.2,
+#             verbose=3)
+#     # name= no lugar de artifact_path= (nova sintaxe)
+#     mlflow.keras.log_model(model, name="model")
+#     print("Modelo salvo!")
+
+def train_model(model, X_train, y_train):
+    with mlflow.start_run(run_name='experiment_mlops_ead_nik') as run:
+        run_id = run.info.run_id
+        print(f"Run ID: {run_id}")
+
+        mlflow.log_params({
+            "epochs": 50, "optimizer": "adam",
+            "loss_function": "sparse_categorical_crossentropy",
+            "validation_split": 0.2, "layers": "10-10-3", "activation": "relu"
+        })
+
+        history = model.fit(X_train, y_train, epochs=50, validation_split=0.2, verbose=2)
+
+        for epoch, _ in enumerate(history.history['loss']):
+            mlflow.log_metrics({k: history.history[k][epoch] for k in ['loss', 'val_loss', 'accuracy', 'val_accuracy']}, step=epoch)
+
+        mlflow.tensorflow.log_model(model, artifact_path="model")
+        print("Modelo salvo!")
+
+    client = MlflowClient()
+    version = client.create_model_version(name="fetal_health", source=f"runs:/{run_id}/model", run_id=run_id)
+    print(f"Versão registrada: v{version.version}")
 
 if __name__ == "__main__":
     X, y = read_data()
