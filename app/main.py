@@ -9,6 +9,19 @@ from fastapi import FastAPI
 
 # Comando para rodar no Anaconda: uvicorn main:app --reload
 
+# Variáveis para ler o dataset do DagsHub
+# url = 'raw.githubusercontent.com'
+# username = 'Nik.Hernandes14'
+# repository = 'mlops-ead'
+# file_name = 'fetal_health_reduced.csv'
+# data = pd.read_csv(f'https://dagshub.com/{username}/{repository}/raw/main/{file_name}')
+
+class FetalHealthData(BaseModel):
+    accelerations: float
+    fetal_movement: float
+    uterine_contractions: float
+    severe_decelerations: float
+
 app = FastAPI(
     title="Fetal Health API",
     openapi_tags=[
@@ -22,12 +35,6 @@ app = FastAPI(
         }
     ])
 
-
-# url = 'raw.githubusercontent.com'
-# username = 'Nik.Hernandes14'
-# repository = 'mlops-ead'
-# file_name = 'fetal_health_reduced.csv'
-# data = pd.read_csv(f'https://dagshub.com/{username}/{repository}/raw/main/{file_name}')
 
 def load_model():
     print('Loading model...')
@@ -46,18 +53,6 @@ def load_model():
 
     registered_model.latest_versions
 
-    # latest = registered_model.latest_versions[-1]
-    # run_id = latest.run_id
-    # print(f'run_id: {run_id}')
-
-    # logged_model = latest.source
-    # print(f'run_id: {run_id}')
-    # print(f'logged_model uri: {logged_model}')
-
-    # loaded_model = mlflow.pyfunc.load_model(logged_model)
-    # print('Model loaded successfully!')
-    # return loaded_model
-
     run_id = registered_model.latest_versions[-1].run_id
     print(f'run_id: {run_id}')  
     logged_model = registered_model.latest_versions[-1].source
@@ -67,12 +62,29 @@ def load_model():
     print('Model loaded successfully!')
     return loaded_model
 
+@app.on_event("startup") # Anotação faz o método acontecer quando a aplicação é iniciada, ou seja, quando o servidor é ligado
+def startup_event():
+    global loaded_model # pode acessar a variável model que foi declarada fora do método, em todo o código
+    loaded_model = load_model()
 
 @app.get(path='/', tags=["Health"])
 def api_health():
     return {"status": "healthy"}
 
 @app.post(path='/predict', tags=["Prediction"])
-def predict():
-    loaded_model = load_model()
-    return {"prediction": 0}    
+def predict(request: FetalHealthData):    
+    global loaded_model
+
+    #converto o dado para um array numpy e reshape para o formato esperado pelo modelo
+    received_data = np.array([
+        request.accelerations,
+        request.fetal_movement,
+        request.uterine_contractions,
+        request.severe_decelerations,
+    ]).reshape(1, -1)
+
+    print ('Received data for prediction:', received_data)
+    prediction = loaded_model.predict(received_data)
+    print('Prediction result:', prediction)
+
+    return {"prediction": str(np.argmax(prediction[0]))}    
